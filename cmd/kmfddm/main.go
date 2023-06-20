@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"hash"
 	"io"
 	"math/rand"
 	"net/http"
@@ -15,6 +16,15 @@ import (
 	ddmhttp "github.com/jessepeterson/kmfddm/http/ddm"
 	"github.com/jessepeterson/kmfddm/log/stdlogfmt"
 	"github.com/jessepeterson/kmfddm/notifier"
+
+	"github.com/cespare/xxhash"
+	"github.com/jessepeterson/kmfddm/http/api"
+	"github.com/jessepeterson/kmfddm/http/ddm"
+	"github.com/jessepeterson/kmfddm/storage/dynamo"
+	"github.com/jessepeterson/kmfddm/storage/file"
+	"github.com/jessepeterson/kmfddm/storage/mysql"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // overridden by -ldflags -X
@@ -251,5 +261,39 @@ func DumpHandler(next http.Handler, output io.Writer) http.HandlerFunc {
 		output.Write(respBytes)
 		output.Write([]byte{'\n'})
 		next.ServeHTTP(w, r)
+	}
+}
+
+
+type allStorage interface {
+	notifier.EnrollmentIDFinder
+	api.SetAPIStorage
+	api.DeclarationAPIStorage
+	ddm.DeclarationRetriever
+	ddm.TokensDeclarationItemsRetriever
+	ddm.StatusStorage
+	api.EnrollmentAPIStorage
+	api.StatusAPIStorage
+}
+
+func storage(name, dsn string) (allStorage, error) {
+	switch name {
+	case "mysql":
+		return mysql.New(
+			mysql.WithDSN(dsn),
+			mysql.WithNewHash(func() hash.Hash { return xxhash.New() }),
+		)
+	case "file":
+		if dsn == "" {
+			dsn = "db"
+		}
+		return file.New(dsn)
+	case "dynamo":
+		if dsn == "" {
+			dsn = "nanomdm"
+		}
+		return dynamo.New(dsn)
+	default:
+		return nil, fmt.Errorf("unknown storage name: %s", name)
 	}
 }
