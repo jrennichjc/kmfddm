@@ -1,0 +1,66 @@
+{
+  "StatusItems" : {
+    "management" : {
+      "declarations" : {
+        "activations" : [
+          {
+            "reasons" : [
+              {
+                "details" : {
+                  "Identifier" : "com.test1.activation",
+                  "ServerToken" : "227f28c4300888c9",
+                  "ConfigurationIdentifiers" : "com.test1.properties"
+                },
+                "description" : "Activation (com.test1.activation:227f28c4300888c9) is missing configurations.",
+                "code" : "Error.MissingConfigurations"
+              }
+            ],
+            "active" : false,
+            "identifier" : "com.test1.activation",
+            "valid" : "valid",
+            "server-token" : "227f28c4300888c9"
+          },
+          {
+            "active" : true,
+            "identifier" : "com.tom.activation",
+            "valid" : "valid",
+            "server-token" : "ff461c85ab35aafb"
+          }
+        ],
+        "configurations" : [
+          {
+            "reasons" : [
+              {
+                "code" : "TESTING"
+              }
+            ],
+            "active" : true,
+            "identifier" : "com.tom.declaration",
+            "valid" : "valid",
+            "server-token" : "943443f2e9a033ad"
+          },
+          {
+            "active" : true,
+            "identifier" : "tom.software.enforcementi.15.0",
+            "valid" : "valid",
+            "server-token" : "f6ba67b016c68173"
+          }
+        ],
+        "assets" : [
+
+        ],
+        "management" : [
+          {
+            "active" : false,
+            "identifier" : "com.test1.properties",
+            "valid" : "valid",
+            "server-token" : "ddeed518e545f5a0"
+          }
+        ]
+      }
+    }
+  },
+  "Errors" : [
+
+  ]
+}

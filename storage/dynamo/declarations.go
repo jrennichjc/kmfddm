@@ -2,7 +2,6 @@ package dynamo
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -12,12 +11,12 @@ import (
 )
 
 type dsDeclaration struct {
-	PK   string `dynamodbav:"pk"`
-	SK   string `dynamodbav:"sk"`
-	JSON string `dynamodbav:"json"`
+	PK    string `dynamodbav:"pk"`
+	SK    string `dynamodbav:"sk"`
+	JSON  string `dynamodbav:"json"`
 	Token string `dynamodbav:"dec_token"`
-	Type string `dynamodbav:"dec_type"`
-	Salt string `dynamodbav:"salt"`
+	Type  string `dynamodbav:"dec_type"`
+	Salt  string `dynamodbav:"salt"`
 }
 
 func (s *DSDynamoTable) StoreDeclaration(_ context.Context, d *ddm.Declaration) (bool, error) {
@@ -28,18 +27,18 @@ func (s *DSDynamoTable) StoreDeclaration(_ context.Context, d *ddm.Declaration) 
 
 	var item dsDeclaration
 
-	err := s.GetItemsSKBeginsWith("dec#" + d.Identifier, "dec#", &item)
-		if item.Token != "" {
-			token = item.Token
-			creationSalt = []byte(item.Salt)
-		} else {
-			tokenMissing = true
-			// token is missing, lets make a new salt
+	err := s.GetItemsSKBeginsWith("dec#"+d.Identifier, "dec#", &item)
+	if item.Token != "" && item.Salt != "" {
+		token = item.Token
+		creationSalt = []byte(item.Salt)
+	} else {
+		tokenMissing = true
+		// token is missing, lets make a new salt
 		creationSalt = make([]byte, 32)
 		if _, err = rand.Read(creationSalt); err != nil {
 			return false, fmt.Errorf("reading random data for creation salt: %w", err)
 		}
-		}
+	}
 
 	if err != nil {
 		return false, fmt.Errorf("reading declaration: %w", err)
@@ -84,23 +83,26 @@ func (s *DSDynamoTable) StoreDeclaration(_ context.Context, d *ddm.Declaration) 
 		return false, fmt.Errorf("marshaling declaration: %w", err)
 	}
 
-	newDeclaration := dsDeclaration {
-		PK: "dec#" + d.Identifier,
-		SK: "dec#",
-		JSON: base64.StdEncoding.EncodeToString(dBytes),
+	newDeclaration := dsDeclaration{
+		PK:    "dec#" + d.Identifier,
+		SK:    "dec#",
+		JSON:  string(dBytes),
 		Token: token,
-		Salt: item.Salt,
-		Type: d.Type,
+		Salt:  item.Salt,
+		Type:  d.Type,
 	}
-
 
 	if tokenMissing {
 		newDeclaration.Salt = string(creationSalt)
 	}
 
 	err = s.AddItem(newDeclaration)
-	
+
 	if err != nil {
+		return false, err
+	}
+
+	if err = s.writeDeclarationDDM(d.Identifier); err != nil {
 		return false, err
 	}
 
@@ -109,21 +111,16 @@ func (s *DSDynamoTable) StoreDeclaration(_ context.Context, d *ddm.Declaration) 
 
 // RetrieveDeclaration retrieves a declaration by its ID.
 func (s *DSDynamoTable) RetrieveDeclaration(_ context.Context, declarationID string) (*ddm.Declaration, error) {
-	
+
 	var declaration dsDeclaration
 
-	err := s.GetSingleItemPKSK("dec#" + declarationID, "dec#", &declaration) 
+	err := s.GetSingleItemPKSK("dec#"+declarationID, "dec#", &declaration)
 
 	if err != nil {
 		return nil, err
 	}
 
-	inflated, err := base64.StdEncoding.DecodeString(declaration.JSON)
-
-	if err != nil {
-		return nil, err
-	}
-	d, err := ddm.ParseDeclaration(inflated)
+	d, err := ddm.ParseDeclaration([]byte(declaration.JSON))
 	if err != nil {
 		return nil, fmt.Errorf("parsing declaration: %w", err)
 	}
@@ -132,10 +129,10 @@ func (s *DSDynamoTable) RetrieveDeclaration(_ context.Context, declarationID str
 
 // DeleteDeclaration deletes a declaration by its ID.
 func (s *DSDynamoTable) DeleteDeclaration(_ context.Context, identifier string) (bool, error) {
-	
+
 	var declaration dsDeclaration
 
-	err := s.GetSingleItemPKSK("dec#" + identifier, "dec#", &declaration)
+	err := s.GetSingleItemPKSK("dec#"+identifier, "dec#", &declaration)
 
 	if err != nil {
 		return false, err
@@ -145,7 +142,7 @@ func (s *DSDynamoTable) DeleteDeclaration(_ context.Context, identifier string) 
 
 	var items []dsGenericItem
 
-	err = s.GetReverseItems("dec#" + identifier, "set#", &items)
+	err = s.GetReverseItems("dec#"+identifier, "set#", &items)
 
 	if err != nil {
 		return false, err
@@ -154,7 +151,7 @@ func (s *DSDynamoTable) DeleteDeclaration(_ context.Context, identifier string) 
 	for _, item := range items {
 		s.deleteSingleItem(item)
 	}
-	
+
 	return true, nil
 }
 

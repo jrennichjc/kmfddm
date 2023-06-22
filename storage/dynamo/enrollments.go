@@ -13,7 +13,7 @@ func (s *DSDynamoTable) RetrieveEnrollmentSets(_ context.Context, enrollmentID s
 
 	err := s.GetItemsSKBeginsWith("enroll#" + enrollmentID, "set#", &dsSets)
 
-	if err != nil {
+	if err == nil {
 		for _, item := range dsSets {
 			sets = append(sets, strings.TrimPrefix(item.SK, "set#"))
 		}

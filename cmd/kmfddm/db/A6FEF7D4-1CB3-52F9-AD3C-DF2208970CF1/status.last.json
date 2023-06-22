@@ -1,0 +1,133 @@
+{
+  "StatusItems" : {
+    "management" : {
+      "declarations" : {
+        "activations" : [
+          {
+            "active" : true,
+            "identifier" : "com.tom.activation",
+            "valid" : "valid",
+            "server-token" : "ff461c85ab35aafb"
+          }
+        ],
+        "configurations" : [
+          {
+            "reasons" : [
+              {
+                "code" : "TESTING"
+              }
+            ],
+            "active" : true,
+            "identifier" : "com.tom.declaration",
+            "valid" : "valid",
+            "server-token" : "943443f2e9a033ad"
+          },
+          {
+            "reasons" : [
+              {
+                "details" : {
+                  "Identifier" : "com.tom.test",
+                  "ServerToken" : "33262fc57348043f"
+                },
+                "description" : "Configuration “com.tom.test:33262fc57348043f” is not referenced by an activation.",
+                "code" : "Info.NotReferencedByActivation"
+              }
+            ],
+            "active" : false,
+            "identifier" : "com.tom.test",
+            "valid" : "unknown",
+            "server-token" : "33262fc57348043f"
+          },
+          {
+            "active" : true,
+            "identifier" : "tom.software.enforcementi.15.0",
+            "valid" : "valid",
+            "server-token" : "f6ba67b016c68173"
+          }
+        ],
+        "assets" : [
+
+        ],
+        "management" : [
+
+        ]
+      },
+      "client-capabilities" : {
+        "supported-versions" : [
+          "1.0.0"
+        ],
+        "supported-payloads" : {
+          "declarations" : {
+            "activations" : [
+              "com.apple.activation.simple"
+            ],
+            "assets" : [
+              "com.apple.asset.credential.acme",
+              "com.apple.asset.credential.certificate",
+              "com.apple.asset.credential.identity",
+              "com.apple.asset.credential.scep",
+              "com.apple.asset.credential.userpassword",
+              "com.apple.asset.data",
+              "com.apple.asset.useridentity"
+            ],
+            "configurations" : [
+              "com.apple.configuration.legacy",
+              "com.apple.configuration.legacy.interactive",
+              "com.apple.configuration.management.status-subscriptions",
+              "com.apple.configuration.management.test",
+              "com.apple.configuration.passcode.settings",
+              "com.apple.configuration.screensharing.connection",
+              "com.apple.configuration.screensharing.connection.group",
+              "com.apple.configuration.screensharing.host.settings",
+              "com.apple.configuration.security.certificate",
+              "com.apple.configuration.security.identity",
+              "com.apple.configuration.services.configuration-files",
+              "com.apple.configuration.softwareupdate.enforcement.specific"
+            ],
+            "management" : [
+              "com.apple.management.organization-info",
+              "com.apple.management.properties",
+              "com.apple.management.server-capabilities"
+            ]
+          },
+          "status-items" : [
+            "device.identifier.serial-number",
+            "device.identifier.udid",
+            "device.model.family",
+            "device.model.identifier",
+            "device.model.marketing-name",
+            "device.model.number",
+            "device.operating-system.build-version",
+            "device.operating-system.family",
+            "device.operating-system.marketing-name",
+            "device.operating-system.supplemental.build-version",
+            "device.operating-system.supplemental.extra-version",
+            "device.operating-system.version",
+            "diskmanagement.filevault.enabled",
+            "management.client-capabilities",
+            "management.declarations",
+            "security.certificate.list",
+            "services.background-task",
+            "softwareupdate.failure-reason",
+            "softwareupdate.install-reason",
+            "softwareupdate.install-state",
+            "softwareupdate.pending-version",
+            "test.array-value",
+            "test.boolean-value",
+            "test.dictionary-value",
+            "test.error-value",
+            "test.integer-value",
+            "test.real-value",
+            "test.string-value"
+          ]
+        },
+        "supported-features" : {
+
+        }
+      }
+    }
+  },
+  "Errors" : [
+
+  ]
+}

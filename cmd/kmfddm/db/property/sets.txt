@@ -1,0 +1,3 @@
+com.test1.activation
+com.test1.properties
+0C0C3DE7-B26A-5545-976C-9AAEAA29133A

@@ -1,0 +1,5 @@
+2023-06-22T09:39:16.203329-07:00,com.test1.activation,false,valid,227f28c4300888c9,activations,W3siZGV0YWlscyI6eyJJZGVudGlmaWVyIjoiY29tLnRlc3QxLmFjdGl2YXRpb24iLCJTZXJ2ZXJUb2tlbiI6IjIyN2YyOGM0MzAwODg4YzkiLCJDb25maWd1cmF0aW9uSWRlbnRpZmllcnMiOiJjb20udGVzdDEucHJvcGVydGllcyJ9LCJkZXNjcmlwdGlvbiI6IkFjdGl2YXRpb24gKGNvbS50ZXN0MS5hY3RpdmF0aW9uOjIyN2YyOGM0MzAwODg4YzkpIGlzIG1pc3NpbmcgY29uZmlndXJhdGlvbnMuIiwiY29kZSI6IkVycm9yLk1pc3NpbmdDb25maWd1cmF0aW9ucyJ9XQ==
+2023-06-22T09:39:16.203329-07:00,com.tom.activation,true,valid,ff461c85ab35aafb,activations,
+2023-06-22T09:39:16.203329-07:00,com.tom.declaration,true,valid,943443f2e9a033ad,configurations,W3siY29kZSI6IlRFU1RJTkcifV0=
+2023-06-22T09:39:16.203329-07:00,tom.software.enforcementi.15.0,true,valid,f6ba67b016c68173,configurations,
+2023-06-22T09:39:16.203329-07:00,com.test1.properties,false,valid,ddeed518e545f5a0,management,

@@ -16,9 +16,9 @@ import (
 )
 
 type dsDeclarationStatus struct {
-	PK   string `dynamodbav:"pk"`
-	SK   string `dynamodbav:"sk"`
-	Time string `dynamodbav:"statusTime"`
+	PK           string `dynamodbav:"pk"`
+	SK           string `dynamodbav:"sk"`
+	Time         string `dynamodbav:"statusTime"`
 	Identifier   string `dynamodbav:"statusID"`
 	Active       bool   `dynamodbav:"statusActive"`
 	Valid        string `dynamodbav:"statusValid"`
@@ -31,7 +31,7 @@ type dsDecError struct {
 	PK   string `dynamodbav:"pk"`
 	SK   string `dynamodbav:"sk"`
 	Time string `dynamodbav:"statusTime"`
-	Path   string `dynamodbav:"path"`
+	Path string `dynamodbav:"path"`
 	Body string `dynamodbav:"body"`
 }
 
@@ -40,8 +40,8 @@ func (s *DSDynamoTable) StoreDeclarationStatus(_ context.Context, enrollmentID s
 	// store raw report
 
 	rawReport := dsGenericItem{
-		PK: "enroll#" + enrollmentID,
-		SK: "status#last",
+		PK:   "enroll#" + enrollmentID,
+		SK:   "status#last",
 		Body: string(status.Raw),
 	}
 
@@ -69,60 +69,69 @@ func (s *DSDynamoTable) StoreDeclarationStatus(_ context.Context, enrollmentID s
 }
 
 func (s *DSDynamoTable) RetrieveDeclarationStatus(_ context.Context, enrollmentIDs []string) (map[string][]ddm.DeclarationQueryStatus, error) {
-	
+
 	ret := make(map[string][]ddm.DeclarationQueryStatus)
 	for _, enrollmentID := range enrollmentIDs {
-		di := new(ddm.DeclarationItems)
-
-		var declarationsItem dsGenericItem
-		err := s.GetSingleItemPKSK("enroll$" + enrollmentID, "dec#items", &declarationsItem)
-		if err != nil {
-			return nil, err
-		}
-
-		if err = json.Unmarshal([]byte(declarationsItem.Body), &di); err != nil {
-			return nil, fmt.Errorf("decoding declaration items json: %w", err)
-		}
-
-		if di == nil || (len(di.Declarations.Activations) < 1 && len(di.Declarations.Assets) < 1 && len(di.Declarations.Configurations) < 1 && len(di.Declarations.Management) < 1) {
-			// no declarations or empty response; move on.
-			continue
-		}
-
-		// deconstruct the declaration items into a slice of configured declarations
-		var manifestDeclarations []ddm.ManifestDeclaration
-		manifestDeclarations = append(manifestDeclarations, di.Declarations.Activations...)
-		manifestDeclarations = append(manifestDeclarations, di.Declarations.Assets...)
-		manifestDeclarations = append(manifestDeclarations, di.Declarations.Configurations...)
-		manifestDeclarations = append(manifestDeclarations, di.Declarations.Management...)
-
-		// generate the "placeholder" output for all of our declaration items
+		var decs []string
+		var items []dsDecError
+		var ddmErrors []storage.StatusError
 		manifestMap := make(map[string]ddm.DeclarationQueryStatus)
-		for _, manifestDeclaration := range manifestDeclarations {
+
+		sets, _ := s.RetrieveEnrollmentSets(context.TODO(), enrollmentID)
+
+		for _, set := range sets {
+			setDecs, _ := s.RetrieveSetDeclarations(context.TODO(), set)
+			decs = append(decs, setDecs...)
+		}
+
+		for _, dec := range decs {
 
 			var item dsDeclarationStatus
-			err = s.GetSingleItemPKSK("enroll#" + enrollmentID, "status#dec#" + manifestDeclaration.Identifier, &item)
+			err := s.GetSingleItemPKSK("enroll#"+enrollmentID, "status#dec#"+dec, &item)
 
 			if err != nil {
 				return nil, err
 			}
 
+			var ddmError interface{}
+			if len([]byte(item.ReasonsJSON)) > 0 {
+				if err = json.Unmarshal([]byte(item.ReasonsJSON), &ddmError); err != nil {
+					return nil, fmt.Errorf("unmarshal reason json: %w", err)
+				}
+			}
+
+			// decode the timestamp
 			var ts time.Time
 			if err = ts.UnmarshalText([]byte(item.Time)); err != nil {
 				return nil, fmt.Errorf("unmarshal time: %w", err)
 			}
 
-			manifestMap[manifestDeclaration.Identifier] = ddm.DeclarationQueryStatus{
+			manifestMap[dec] = ddm.DeclarationQueryStatus{
 				DeclarationStatus: ddm.DeclarationStatus{
-					Identifier:  manifestDeclaration.Identifier,
-					ServerToken: item.ServerToken,
+					Identifier:   dec,
+					Active:       item.Active,
+					Valid:        item.Valid,
+					ServerToken:  item.ServerToken,
 					ManifestType: item.ManifestType,
-					Active: item.Active,
-					Valid: item.Valid,
 				},
-				Reasons: item.ReasonsJSON,
+				Reasons:        ddmError,
 				StatusReceived: ts,
 			}
+		}
+
+		for _, item := range items {
+
+			var ts time.Time
+			if err := ts.UnmarshalText([]byte(item.Time)); err != nil {
+				return nil, fmt.Errorf("unmarshal time: %w", err)
+			}
+
+			ddmError := storage.StatusError{
+				Path:      item.Path,
+				Error:     item.Body,
+				Timestamp: ts,
+			}
+			ddmErrors = append(ddmErrors, ddmError)
 		}
 
 		// turn back into a list
@@ -140,10 +149,37 @@ func (s *DSDynamoTable) RetrieveStatusErrors(_ context.Context, enrollmentIDs []
 	ret := make(map[string][]storage.StatusError)
 
 	for _, enrollmentID := range enrollmentIDs {
+
+		var decs []string
 		var items []dsDecError
 		var ddmErrors []storage.StatusError
 
-		err := s.GetItemsSKBeginsWith("enroll#" + enrollmentID, "status#error#", &items); if err != nil {
+		sets, _ := s.RetrieveEnrollmentSets(context.TODO(), enrollmentID)
+
+		for _, set := range sets {
+			setDecs, _ := s.RetrieveSetDeclarations(context.TODO(), set)
+			decs = append(decs, setDecs...)
+		}
+
+		for _, dec := range decs {
+
+			di := new(ddm.DeclarationItems)
+
+			var item dsDeclarationStatus
+			_ = s.GetSingleItemPKSK("enroll#"+enrollmentID, "dec#status#"+dec, item)
+
+			if err := json.Unmarshal([]byte(item.ReasonsJSON), &di); err != nil {
+				return nil, fmt.Errorf("decoding declaration items json: %w", err)
+			}
+
+			if di == nil || (len(di.Declarations.Activations) < 1 && len(di.Declarations.Assets) < 1 && len(di.Declarations.Configurations) < 1 && len(di.Declarations.Management) < 1) {
+				// no declarations or empty response; move on.
+				continue
+			}
+		}
+
+		err := s.GetItemsSKBeginsWith("enroll#"+enrollmentID, "status#error#", &items)
+		if err != nil {
 			return nil, err
 		}
 
@@ -155,8 +191,8 @@ func (s *DSDynamoTable) RetrieveStatusErrors(_ context.Context, enrollmentIDs []
 			}
 
 			ddmError := storage.StatusError{
-				Path: item.Path,
-				Error: item.Body,
+				Path:      item.Path,
+				Error:     item.Body,
 				Timestamp: ts,
 			}
 			ddmErrors = append(ddmErrors, ddmError)
@@ -220,11 +256,11 @@ func mergeStatusValues(dst, src []ddm.StatusValue) (ret []ddm.StatusValue) {
 	return
 }
 
-func (s *DSDynamoTable) readStatusValues(enrollmentID string)  ([]ddm.StatusValue, error) {
+func (s *DSDynamoTable) readStatusValues(enrollmentID string) ([]ddm.StatusValue, error) {
 
 	var item dsGenericItem
 
-	err := s.GetSingleItemPKSK("enroll#" + enrollmentID, "status#values", &item)
+	err := s.GetSingleItemPKSK("enroll#"+enrollmentID, "status#values", &item)
 
 	if err != nil {
 		return nil, err
@@ -293,8 +329,8 @@ func (s *DSDynamoTable) storeStatusValues(enrollmentID string, values []ddm.Stat
 	writer.WriteAll(records)
 
 	item := dsGenericItem{
-		PK: "enroll#"+enrollmentID,
-		SK: "status#values",
+		PK:   "enroll#" + enrollmentID,
+		SK:   "status#values",
 		Body: b.String(),
 	}
 
@@ -316,15 +352,15 @@ func (s *DSDynamoTable) storeStatusDeclarations(enrollmentID string, declaration
 		}
 
 		item := dsDeclarationStatus{
-			PK: "enroll#" + enrollmentID,
-			SK: "status#dec#" + dec.Identifier,
-			Time: string(nowText),
-			Identifier: dec.Identifier,
-			Active: dec.Active,
-			Valid: dec.Valid,
-			ServerToken: dec.ServerToken,
+			PK:           "enroll#" + enrollmentID,
+			SK:           "status#dec#" + dec.Identifier,
+			Time:         string(nowText),
+			Identifier:   dec.Identifier,
+			Active:       dec.Active,
+			Valid:        dec.Valid,
+			ServerToken:  dec.ServerToken,
 			ManifestType: dec.ManifestType,
-			ReasonsJSON: string(dec.ReasonsJSON),
+			ReasonsJSON:  string(dec.ReasonsJSON),
 		}
 
 		err = s.AddItem(item)
@@ -349,9 +385,9 @@ func (s *DSDynamoTable) storeStatusErrors(enrollmentID string, ddmErrors []ddm.S
 			return fmt.Errorf("marshal time to text: %w", err)
 		}
 
-		item := dsDecError {
-			PK: "enroll#" + enrollmentID,
-			SK: "status#error#" + statusError.Path + "#" + string(nowText),
+		item := dsDecError{
+			PK:   "enroll#" + enrollmentID,
+			SK:   "status#error#" + statusError.Path + "#" + string(nowText),
 			Path: statusError.Path,
 			Time: string(nowText),
 			Body: string(statusError.ErrorJSON),

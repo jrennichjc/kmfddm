@@ -1,0 +1,2 @@
+com.test1.properties
+com.test1.activation

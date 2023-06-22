@@ -1,0 +1,1 @@
+{"Identifier":"acme01","Payload":{"Reference":{"ContentType":"application/json","DataURL":"https://durt-cert.jclab.dev/assets/acme.json"}},"ServerToken":"96a8cbedf32e0f04","Type":"com.apple.asset.credential.acme"}

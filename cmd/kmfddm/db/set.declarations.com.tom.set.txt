@@ -1,0 +1,3 @@
+com.tom.declaration
+com.tom.activation
+tom.software.enforcementi.15.0
