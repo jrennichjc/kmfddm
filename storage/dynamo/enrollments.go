@@ -7,11 +7,11 @@ import (
 
 // RetrieveEnrollmentSets returns the slice of sets associated with an enrollment ID.
 func (s *DSDynamoTable) RetrieveEnrollmentSets(_ context.Context, enrollmentID string) ([]string, error) {
-	
+
 	var sets []string
 	var dsSets []dsGenericItem
 
-	err := s.GetItemsSKBeginsWith("enroll#" + enrollmentID, "set#", &dsSets)
+	err := s.GetItemsSKBeginsWith("enroll#"+enrollmentID, "set#", &dsSets)
 
 	if err == nil {
 		for _, item := range dsSets {
@@ -60,7 +60,7 @@ func (s *DSDynamoTable) declarationEnrollmentIDs(declarationID string) ([]string
 	var enrollments []string
 	var items []dsGenericItem
 
-	err := s.GetItemsSKBeginsWith("dec#" + declarationID, "set#", &items)
+	err := s.GetReverseItems("dec#"+declarationID, "set#", &items)
 
 	if err != nil {
 		return enrollments, err
@@ -88,11 +88,11 @@ func (s *DSDynamoTable) RetrieveDeclarationEnrollmentIDs(_ context.Context, decl
 
 // RetrieveSetEnrollmentIDs retrieves a list of enrollment IDs that are associated with a set.
 func (s *DSDynamoTable) RetrieveSetEnrollmentIDs(_ context.Context, setName string) ([]string, error) {
-	
+
 	var items []dsGenericItem
 	var enrollments []string
 
-	err := s.GetReverseItems("set#" + setName, "enroll#", &items)
+	err := s.GetReverseItems("set#"+setName, "enroll#", &items)
 
 	if err != nil {
 		return nil, err
